@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>CADtributions</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --panel: #161b22;
+    --border: #30363d;
+    --text: #c9d1d9;
+    --muted: #8b949e;
+    --accent: #58a6ff;
+    --level0: #161b22;
+    --level1: #0e4429;
+    --level2: #006d32;
+    --level3: #26a641;
+    --level4: #39d353;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+    font-size: 13px;
+    height: 100%;
+  }
+
+  #app {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  header {
+    padding: 14px 18px 10px 18px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  header h1 {
+    margin: 0 0 2px 0;
+    font-size: 16px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  header .subtitle {
+    color: var(--muted);
+    font-size: 12px;
+  }
+
+  .stats {
+    display: flex;
+    gap: 22px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+  }
+
+  .stat {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .stat .value {
+    font-size: 18px;
+    font-weight: 700;
+    color: #ffffff;
+  }
+
+  .stat .label {
+    color: var(--muted);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  main {
+    flex: 1;
+    overflow: auto;
+    padding: 16px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  #graph-wrap {
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+
+  #month-labels {
+    display: flex;
+    margin-left: 34px;
+    margin-bottom: 4px;
+    font-size: 11px;
+    color: var(--muted);
+    height: 14px;
+    position: relative;
+  }
+
+  #graph {
+    display: flex;
+    gap: 3px;
+  }
+
+  .day-labels {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    margin-right: 6px;
+    font-size: 10px;
+    color: var(--muted);
+    justify-content: flex-start;
+  }
+
+  .day-labels div {
+    height: 11px;
+    line-height: 11px;
+  }
+
+  .week-col {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .day-cell {
+    width: 11px;
+    height: 11px;
+    border-radius: 2px;
+    background: var(--level0);
+    border: 1px solid rgba(255,255,255,0.04);
+    cursor: pointer;
+  }
+
+  .day-cell.empty {
+    visibility: hidden;
+    cursor: default;
+  }
+
+  .day-cell[data-level="1"] { background: var(--level1); }
+  .day-cell[data-level="2"] { background: var(--level2); }
+  .day-cell[data-level="3"] { background: var(--level3); }
+  .day-cell[data-level="4"] { background: var(--level4); }
+
+  .day-cell.selected {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+
+  .legend {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 6px;
+  }
+
+  .legend .day-cell { cursor: default; width: 10px; height: 10px; }
+
+  #tooltip {
+    position: fixed;
+    background: #1c2128;
+    border: 1px solid var(--border);
+    padding: 6px 9px;
+    border-radius: 6px;
+    font-size: 12px;
+    pointer-events: none;
+    display: none;
+    z-index: 10;
+    max-width: 260px;
+  }
+
+  .section-title {
+    font-size: 13px;
+    font-weight: 600;
+    margin: 0 0 8px 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  select {
+    background: var(--panel);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-size: 12px;
+  }
+
+  #entries {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .entry {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+  }
+
+  .entry:last-child { border-bottom: none; }
+
+  .entry .badge {
+    flex-shrink: 0;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--level3);
+  }
+
+  .entry .badge.new { background: var(--accent); }
+
+  .entry .main {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .entry .file {
+    font-weight: 600;
+    color: #ffffff;
+  }
+
+  .entry .path {
+    color: var(--muted);
+    font-size: 11px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .entry .meta {
+    color: var(--muted);
+    font-size: 11px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    text-align: right;
+  }
+
+  .entry .tag {
+    display: inline-block;
+    padding: 1px 6px;
+    border-radius: 999px;
+    background: rgba(88,166,255,0.15);
+    color: var(--accent);
+    font-size: 10px;
+    margin-left: 6px;
+  }
+
+  #empty-state {
+    color: var(--muted);
+    text-align: center;
+    padding: 40px 20px;
+    font-size: 13px;
+  }
+
+  #empty-state strong {
+    color: var(--text);
+    display: block;
+    margin-bottom: 6px;
+    font-size: 14px;
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1>CADtributions</h1>
+    <div class="subtitle">Every saved version and new file, tracked like a commit graph.</div>
+    <div class="stats">
+      <div class="stat"><span class="value" id="stat-total">0</span><span class="label">Total CADtributions</span></div>
+      <div class="stat"><span class="value" id="stat-streak">0</span><span class="label">Current streak</span></div>
+      <div class="stat"><span class="value" id="stat-longest">0</span><span class="label">Longest streak</span></div>
+      <div class="stat"><span class="value" id="stat-files">0</span><span class="label">Files touched</span></div>
+      <div class="stat"><span class="value" id="stat-today">0</span><span class="label">Today</span></div>
+    </div>
+  </header>
+
+  <main>
+    <div>
+      <div id="graph-wrap">
+        <div id="month-labels"></div>
+        <div id="graph">
+          <div class="day-labels">
+            <div></div><div>Mon</div><div></div><div>Wed</div><div></div><div>Fri</div><div></div>
+          </div>
+          <div id="weeks"></div>
+        </div>
+      </div>
+      <div class="legend">
+        <span>Less</span>
+        <div class="day-cell" data-level="0"></div>
+        <div class="day-cell" data-level="1"></div>
+        <div class="day-cell" data-level="2"></div>
+        <div class="day-cell" data-level="3"></div>
+        <div class="day-cell" data-level="4"></div>
+        <span>More</span>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-title">
+        <span id="entries-title">Recent CADtributions</span>
+        <select id="project-filter">
+          <option value="">All projects</option>
+        </select>
+      </div>
+      <div id="entries"></div>
+      <div id="empty-state" style="display:none;">
+        <strong>No CADtributions yet</strong>
+        Save a design in Fusion 360 to make your first CADtribution.
+      </div>
+    </div>
+  </main>
+</div>
+
+<div id="tooltip"></div>
+
+<script>
+  var allEntries = [];
+  var selectedDate = null;
+  var selectedProject = '';
+
+  function toDate(s) {
+    var parts = s.split('-');
+    return new Date(parseInt(parts[0],10), parseInt(parts[1],10)-1, parseInt(parts[2],10));
+  }
+
+  function fmtDateKey(d) {
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  }
+
+  function fmtDateNice(d) {
+    return d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+  }
+
+  function render(entries) {
+    allEntries = entries || [];
+    renderStats();
+    renderProjectFilter();
+    renderGraph();
+    renderEntries();
+  }
+
+  function countsByDate() {
+    var counts = {};
+    allEntries.forEach(function(e) {
+      if (selectedProject && e.project !== selectedProject) return;
+      counts[e.date] = (counts[e.date] || 0) + 1;
+    });
+    return counts;
+  }
+
+  function renderStats() {
+    var relevant = selectedProject ? allEntries.filter(function(e){ return e.project === selectedProject; }) : allEntries;
+    document.getElementById('stat-total').textContent = relevant.length;
+
+    var files = {};
+    relevant.forEach(function(e){ files[e.project + '|' + e.path] = true; });
+    document.getElementById('stat-files').textContent = Object.keys(files).length;
+
+    var counts = countsByDate();
+    var todayKey = fmtDateKey(new Date());
+    document.getElementById('stat-today').textContent = counts[todayKey] || 0;
+
+    // Streaks: consecutive days (including today or yesterday) with >=1 CADtribution
+    var dayKeys = Object.keys(counts);
+    var current = 0;
+    var cursor = new Date();
+    if (!counts[fmtDateKey(cursor)]) {
+      cursor.setDate(cursor.getDate() - 1);
+    }
+    while (counts[fmtDateKey(cursor)]) {
+      current += 1;
+      cursor.setDate(cursor.getDate() - 1);
+    }
+
+    var longest = 0;
+    var run = 0;
+    var sortedKeys = dayKeys.sort();
+    var prev = null;
+    sortedKeys.forEach(function(k) {
+      if (prev) {
+        var prevDate = toDate(prev);
+        var curDate = toDate(k);
+        var diffDays = Math.round((curDate - prevDate) / 86400000);
+        if (diffDays === 1) { run += 1; } else { run = 1; }
+      } else {
+        run = 1;
+      }
+      longest = Math.max(longest, run);
+      prev = k;
+    });
+
+    document.getElementById('stat-streak').textContent = current;
+    document.getElementById('stat-longest').textContent = longest;
+  }
+
+  function renderProjectFilter() {
+    var select = document.getElementById('project-filter');
+    var projects = {};
+    allEntries.forEach(function(e){ projects[e.project] = true; });
+    var current = select.value;
+    select.innerHTML = '<option value="">All projects</option>';
+    Object.keys(projects).sort().forEach(function(p) {
+      var opt = document.createElement('option');
+      opt.value = p;
+      opt.textContent = p;
+      select.appendChild(opt);
+    });
+    select.value = current;
+  }
+
+  function levelFor(count) {
+    if (!count) return 0;
+    if (count === 1) return 1;
+    if (count <= 3) return 2;
+    if (count <= 6) return 3;
+    return 4;
+  }
+
+  function renderGraph() {
+    var weeksEl = document.getElementById('weeks');
+    var monthLabelsEl = document.getElementById('month-labels');
+    weeksEl.innerHTML = '';
+    weeksEl.style.display = 'flex';
+    weeksEl.style.gap = '3px';
+    monthLabelsEl.innerHTML = '';
+
+    var counts = countsByDate();
+
+    var today = new Date();
+    today.setHours(0,0,0,0);
+
+    // Start on the Sunday at or before 52 weeks ago.
+    var start = new Date(today);
+    start.setDate(start.getDate() - 52 * 7);
+    start.setDate(start.getDate() - start.getDay());
+
+    var totalDays = Math.round((today - start) / 86400000) + 1;
+    var totalWeeks = Math.ceil((totalDays + start.getDay()) / 7);
+
+    var lastMonth = -1;
+    var cellSize = 14; // 11px cell + 3px gap
+
+    for (var w = 0; w < totalWeeks; w++) {
+      var col = document.createElement('div');
+      col.className = 'week-col';
+
+      for (var d = 0; d < 7; d++) {
+        var cellDate = new Date(start);
+        cellDate.setDate(start.getDate() + w * 7 + d);
+
+        if (cellDate > today) {
+          var empty = document.createElement('div');
+          empty.className = 'day-cell empty';
+          col.appendChild(empty);
+          continue;
+        }
+
+        var key = fmtDateKey(cellDate);
+        var count = counts[key] || 0;
+        var cell = document.createElement('div');
+        cell.className = 'day-cell';
+        cell.setAttribute('data-level', levelFor(count));
+        cell.setAttribute('data-date', key);
+        cell.setAttribute('data-count', count);
+        if (key === selectedDate) cell.classList.add('selected');
+
+        cell.addEventListener('mouseenter', showTooltip);
+        cell.addEventListener('mousemove', moveTooltip);
+        cell.addEventListener('mouseleave', hideTooltip);
+        cell.addEventListener('click', function() {
+          var clickedDate = this.getAttribute('data-date');
+          selectedDate = (selectedDate === clickedDate) ? null : clickedDate;
+          renderGraph();
+          renderEntries();
+        });
+
+        col.appendChild(cell);
+
+        if (d === 0 && cellDate.getMonth() !== lastMonth) {
+          lastMonth = cellDate.getMonth();
+          var label = document.createElement('div');
+          label.style.position = 'absolute';
+          label.style.left = (w * cellSize) + 'px';
+          label.textContent = cellDate.toLocaleDateString(undefined, { month: 'short' });
+          monthLabelsEl.appendChild(label);
+        }
+      }
+      weeksEl.appendChild(col);
+    }
+    monthLabelsEl.style.position = 'relative';
+  }
+
+  function showTooltip(e) {
+    var count = e.target.getAttribute('data-count');
+    var date = e.target.getAttribute('data-date');
+    var tooltip = document.getElementById('tooltip');
+    var d = toDate(date);
+    var noun = count == 1 ? 'CADtribution' : 'CADtributions';
+    tooltip.textContent = count + ' ' + noun + ' on ' + fmtDateNice(d);
+    tooltip.style.display = 'block';
+    moveTooltip(e);
+  }
+
+  function moveTooltip(e) {
+    var tooltip = document.getElementById('tooltip');
+    tooltip.style.left = (e.clientX + 12) + 'px';
+    tooltip.style.top = (e.clientY + 12) + 'px';
+  }
+
+  function hideTooltip() {
+    document.getElementById('tooltip').style.display = 'none';
+  }
+
+  function renderEntries() {
+    var container = document.getElementById('entries');
+    var emptyState = document.getElementById('empty-state');
+    var titleEl = document.getElementById('entries-title');
+    container.innerHTML = '';
+
+    var filtered = allEntries.filter(function(e) {
+      if (selectedProject && e.project !== selectedProject) return false;
+      if (selectedDate && e.date !== selectedDate) return false;
+      return true;
+    });
+
+    filtered.sort(function(a,b){ return b.timestamp.localeCompare(a.timestamp); });
+
+    if (selectedDate) {
+      var d = toDate(selectedDate);
+      titleEl.textContent = 'CADtributions on ' + fmtDateNice(d);
+    } else {
+      titleEl.textContent = 'Recent CADtributions';
+    }
+
+    if (filtered.length === 0) {
+      container.style.display = 'none';
+      emptyState.style.display = 'block';
+      if (allEntries.length > 0) {
+        emptyState.innerHTML = '<strong>No CADtributions here</strong>Try a different day or project filter.';
+      } else {
+        emptyState.innerHTML = '<strong>No CADtributions yet</strong>Save a design in Fusion 360 to make your first CADtribution.';
+      }
+      return;
+    }
+
+    container.style.display = 'block';
+    emptyState.style.display = 'none';
+
+    var toShow = selectedDate ? filtered : filtered.slice(0, 40);
+
+    toShow.forEach(function(e) {
+      var row = document.createElement('div');
+      row.className = 'entry';
+
+      var badge = document.createElement('div');
+      badge.className = 'badge' + (e.isNewFile ? ' new' : '');
+      row.appendChild(badge);
+
+      var main = document.createElement('div');
+      main.className = 'main';
+      var fileLine = document.createElement('div');
+      fileLine.className = 'file';
+      fileLine.textContent = e.file;
+      if (e.isNewFile) {
+        var tag = document.createElement('span');
+        tag.className = 'tag';
+        tag.textContent = 'new file';
+        fileLine.appendChild(tag);
+      }
+      var pathLine = document.createElement('div');
+      pathLine.className = 'path';
+      pathLine.textContent = e.path || e.project;
+      main.appendChild(fileLine);
+      main.appendChild(pathLine);
+      row.appendChild(main);
+
+      var meta = document.createElement('div');
+      meta.className = 'meta';
+      var when = new Date(e.timestamp);
+      meta.innerHTML = 'v' + e.version + '<br>' + when.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+      row.appendChild(meta);
+
+      container.appendChild(row);
+    });
+  }
+
+  document.getElementById('project-filter').addEventListener('change', function(e) {
+    selectedProject = e.target.value;
+    renderStats();
+    renderGraph();
+    renderEntries();
+  });
+
+  // Receives pushes from Fusion (e.g. a live update right after a save).
+  window.fusionJavaScriptHandler = {
+    handle: function(action, data) {
+      try {
+        if (action === 'populate') {
+          render(JSON.parse(data));
+          return JSON.stringify({ status: 'OK' });
+        }
+        return JSON.stringify({ status: 'ignored' });
+      } catch (err) {
+        return JSON.stringify({ status: 'error', message: String(err) });
+      }
+    }
+  };
+
+  // Ask Fusion for the current data as soon as the palette loads.
+  (function init() {
+    try {
+      var response = adsk.fusionSendData('ready', '');
+      if (response) {
+        render(JSON.parse(response));
+      }
+    } catch (err) {
+      render([]);
+    }
+  })();
+</script>
+</body>
+</html>
