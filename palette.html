@@ -424,37 +424,34 @@
     select.value = current;
   }
   
-  function computeThresholds(counts) {
-    var values = [];
-    
+  function computeLevelMap(counts) {
+    var uniqueValues = [];
+    var seen = {};
+
     for (var key in counts) {
-      values.push(counts[key]);
+      var v = counts[key];
+      if (v > 0 && !seen[v]) {
+        seen[v] = true;
+        uniqueValues.push(v);
+      }
     }
 
-    values.sort(function(a, b) { return a - b; });
+    uniqueValues.sort(function(a, b) { return a - b; });
 
-    if (values.length === 0) {
-      return { low: 1, mid: 2, high: 3 };
+    var levelMap = {};
+    var n = uniqueValues.length;
+
+    for (var i = 0; i < n; i++) {
+      var rank = i + 1;
+      levelMap[uniqueValues[i]] = Math.ceil((rank / n) * 4);
     }
 
-    function percentile(p) {
-      var index = Math.floor(p * (values.length - 1));
-      return values[index];
-    }
-
-    return {
-      low: percentile(0.25),
-      mid: percentile(0.5),
-      high: percentile(0.75)
-    };
+    return levelMap;
 }
 
-  function levelFor(count, thresholds) {
+  function levelFor(count, levelMap) {
     if (!count) return 0;
-    if (count <= thresholds.low) return 1;
-    if (count <= thresholds.mid) return 2;
-    if (count <= thresholds.high) return 3;
-    return 4;
+    return levelMap[count] || 4;
   }
 
   function renderGraph() {
@@ -467,7 +464,7 @@
 
     var counts = countsByDate();
 
-    var thresholds = computeThresholds(counts);
+    var levelMap = computeLevelMap(counts);
 
     var today = new Date();
     today.setHours(0,0,0,0);
@@ -502,7 +499,7 @@
         var count = counts[key] || 0;
         var cell = document.createElement('div');
         cell.className = 'day-cell';
-        cell.setAttribute('data-level', levelFor(count, thresholds));
+        cell.setAttribute('data-level', levelFor(count, levelMap));
         cell.setAttribute('data-date', key);
         cell.setAttribute('data-count', count);
         if (key === selectedDate) cell.classList.add('selected');
