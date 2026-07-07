@@ -765,10 +765,13 @@
     var width = leftMargin + totalWeeks * cellStep + rightPadding;
     var height = topMargin + 7 * cellStep + bottomMargin;
 
+    var EXPORT_SCALE = 3;
+
     var canvas = document.createElement('canvas');
-    canvas.width = width;
-    canvas.height = height;
+    canvas.width = width * EXPORT_SCALE;
+    canvas.height = height * EXPORT_SCALE;
     var ctx = canvas.getContext('2d');
+    ctx.scale(EXPORT_SCALE, EXPORT_SCALE);
 
     ctx.fillStyle = PALETTE_COLORS.bg;
     ctx.fillRect(0, 0, width, height);
