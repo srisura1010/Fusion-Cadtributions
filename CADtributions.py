@@ -380,18 +380,22 @@ class CADtributionsHTMLHandler(adsk.core.HTMLEventHandler):
                     try:
                         data_file = _app.data.findFileById(file_id)
                         if data_file is None:
+                            if _ui:
+                                _ui.messageBox(
+                                    "This file couldn't be opened -- it may have been "
+                                    "deleted or moved."
+                                )
                             html_args.returnData = json.dumps({'status': 'not_found'})
                         else:
                             _app.documents.open(data_file, True)
-                            # Force the palette back to the front -- opening
-                            # a file shifts Fusion's focus, and this nudges
-                            # the window manager to re-raise us above it.
                             palette = get_palette()
                             if palette is not None:
                                 palette.isVisible = False
                                 palette.isVisible = True
                             html_args.returnData = json.dumps({'status': 'OK'})
                     except Exception:
+                        if _ui:
+                            _ui.messageBox("This file couldn't be opened.")
                         html_args.returnData = json.dumps({'status': 'error'})
 
             else:
