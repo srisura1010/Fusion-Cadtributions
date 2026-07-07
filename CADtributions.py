@@ -383,6 +383,13 @@ class CADtributionsHTMLHandler(adsk.core.HTMLEventHandler):
                             html_args.returnData = json.dumps({'status': 'not_found'})
                         else:
                             _app.documents.open(data_file, True)
+                            # Force the palette back to the front -- opening
+                            # a file shifts Fusion's focus, and this nudges
+                            # the window manager to re-raise us above it.
+                            palette = get_palette()
+                            if palette is not None:
+                                palette.isVisible = False
+                                palette.isVisible = True
                             html_args.returnData = json.dumps({'status': 'OK'})
                     except Exception:
                         html_args.returnData = json.dumps({'status': 'error'})
