@@ -3,7 +3,7 @@ CADtributions
 -------------
 A Fusion 360 add-in that tracks every time you save a new version of a
 design (or create a brand new file) and shows them in a GitHub-style
-"contribution graph" -- a CADtribution graph.
+"contribution graph" -> a CADtribution graph.
 
 Author: Srivatsav Sura
 """
