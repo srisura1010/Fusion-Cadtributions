@@ -444,35 +444,54 @@
     });
     select.value = current;
   }
-  
-  function computeLevelMap(counts) {
-    var uniqueValues = [];
-    var seen = {};
 
+  function percentile(sortedValues, p) {
+    if (sortedValues.length === 0) return 0;
+    if (sortedValues.length === 1) return sortedValues[0];
+    var idx = p * (sortedValues.length - 1);
+    var lower = Math.floor(idx);
+    var upper = Math.ceil(idx);
+    var weight = idx - lower;
+    if (upper >= sortedValues.length) return sortedValues[sortedValues.length - 1];
+    return sortedValues[lower] * (1 - weight) + sortedValues[upper] * weight;
+  }
+
+  function computeQuartiles(counts) {
+    var values = [];
     for (var key in counts) {
-      var v = counts[key];
-      if (v > 0 && !seen[v]) {
-        seen[v] = true;
-        uniqueValues.push(v);
-      }
+      if (counts[key] > 0) values.push(counts[key]);
     }
-
-    uniqueValues.sort(function(a, b) { return a - b; });
-
-    var levelMap = {};
-    var n = uniqueValues.length;
-
-    for (var i = 0; i < n; i++) {
-      var rank = i + 1;
-      levelMap[uniqueValues[i]] = Math.ceil((rank / n) * 4);
+    if (values.length === 0) {
+      return { q1: 0, q2: 0, q3: 0, outlierThreshold: Infinity };
     }
+    values.sort(function(a, b) { return a - b; });
 
-    return levelMap;
-}
+    // First pass: quartiles on everything, just to detect outliers.
+    var rawQ1 = percentile(values, 0.25);
+    var rawQ3 = percentile(values, 0.75);
+    var iqr = rawQ3 - rawQ1;
+    var outlierThreshold = rawQ3 + 1.5 * iqr;
 
-  function levelFor(count, levelMap) {
+    // Second pass: recompute quartiles with outliers excluded, so one
+    // huge day doesn't compress the rest of the scale.
+    var filtered = values.filter(function(v) { return v <= outlierThreshold; });
+    if (filtered.length === 0) filtered = values;
+
+    return {
+      q1: percentile(filtered, 0.25),
+      q2: percentile(filtered, 0.5),
+      q3: percentile(filtered, 0.75),
+      outlierThreshold: outlierThreshold
+    };
+  }
+
+  function levelFor(count, quartiles) {
     if (!count) return 0;
-    return levelMap[count] || 4;
+    if (count > quartiles.outlierThreshold) return 4;
+    if (count >= quartiles.q3) return 4;
+    if (count >= quartiles.q2) return 3;
+    if (count >= quartiles.q1) return 2;
+    return 1;
   }
 
   function renderGraph() {
@@ -485,7 +504,7 @@
 
     var counts = countsByDate();
 
-    var levelMap = computeLevelMap(counts);
+    var quartiles = computeQuartiles(counts);
 
     var today = new Date();
     today.setHours(0,0,0,0);
@@ -520,7 +539,7 @@
         var count = counts[key] || 0;
         var cell = document.createElement('div');
         cell.className = 'day-cell';
-        cell.setAttribute('data-level', levelFor(count, levelMap));
+        cell.setAttribute('data-level', levelFor(count, quartiles));
         cell.setAttribute('data-date', key);
         cell.setAttribute('data-count', count);
         if (key === selectedDate) cell.classList.add('selected');
