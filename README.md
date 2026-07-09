@@ -19,7 +19,10 @@ Think of it like a commit graph, but for CAD work.
 
 ## Screenshots
 
-*(add a screenshot or two here once you have them, the PNG export feature makes this easy)*
+<img width="1038" height="825" alt="image" src="https://github.com/user-attachments/assets/4df1c97e-8a7a-4249-a045-c4dd86c2374c" />
+<img width="1011" height="233" alt="image" src="https://github.com/user-attachments/assets/5aa2baaf-241b-4de9-9380-b97cebd41338" />
+<img width="1042" height="825" alt="image" src="https://github.com/user-attachments/assets/697b32ec-6309-4bea-9c91-191f9c805200" />
+
 
 ## Installation
 
