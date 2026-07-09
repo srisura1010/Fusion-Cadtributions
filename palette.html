@@ -330,7 +330,7 @@
     font-size: 14px;
   }
 
-  footer {
+footer {
     padding: 10px 18px;
     border-top: 1px solid var(--border);
     font-size: 11px;
@@ -339,16 +339,31 @@
     flex-shrink: 0;
   }
 
-  footer a {
+  .footer-links {
+    margin-bottom: 4px;
+  }
+
+  .footer-links a {
     color: var(--muted);
     text-decoration: underline;
     cursor: pointer;
   }
 
-  footer a:hover {
+  .footer-links a:hover {
     color: var(--accent);
   }
+
+  .footer-sep {
+    margin: 0 6px;
+    color: var(--border);
+  }
+
+  .footer-copyright {
+    color: var(--muted);
+  }
+
 </style>
+
 </head>
 <body>
 <div id="app">
@@ -411,8 +426,18 @@
   </main>
 
   <footer>
-    <a href="#" id="privacy-link">Privacy Policy</a>
+    <div class="footer-links">
+      <a href="#" class="footer-link" data-url="https://github.com/srisura1010/Fusion-CADtributions">GitHub</a>
+      <span class="footer-sep">&middot;</span>
+      <a href="#" class="footer-link" data-url="https://github.com/srisura1010/Fusion-CADtributions#readme">Docs</a>
+      <span class="footer-sep">&middot;</span>
+      <a href="#" class="footer-link" data-url="https://github.com/srisura1010/Fusion-CADtributions/blob/main/PRIVACY.md">Privacy Policy</a>
+      <span class="footer-sep">&middot;</span>
+      <a href="#" class="footer-link" data-url="mailto:srisura1010@gmail.com">Contact</a>
+    </div>
+    <div class="footer-copyright">&copy; 2026 Srivatsav Sura</div>
   </footer>
+  
 </div>
 
 <div id="tooltip"></div>
@@ -982,11 +1007,12 @@
 
   document.getElementById('export-graph-btn').addEventListener('click', exportGraphAsPNG);
 
-  document.getElementById('privacy-link').addEventListener('click', function(e) {
-    e.preventDefault();
-    adsk.fusionSendData('openUrl', JSON.stringify({
-      url: 'https://github.com/srisura1010/Fusion-CADtributions/blob/main/PRIVACY.md'
-    }));
+  document.querySelectorAll('.footer-link').forEach(function(link) {
+    link.addEventListener('click', function(e) {
+      e.preventDefault();
+      var url = this.getAttribute('data-url');
+      adsk.fusionSendData('openUrl', JSON.stringify({ url: url }));
+    });
   });
 
   // Receives pushes from Fusion (e.g. a live update right after a save).
