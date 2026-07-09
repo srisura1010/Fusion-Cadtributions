@@ -1,4 +1,4 @@
-# Fusion-Cadtributions
+# Fusion-CADtributions
 
 A Fusion 360 add-in that turns your save history into a GitHub style contribution graph. Every time you save a new version of a design, or create a brand new file, it counts as one CADtribution (like a contribution).
 
