@@ -53,4 +53,4 @@ MIT. See [LICENSE](LICENSE) for details.
 
 ## Author
 
-Srivatsav Sura
+Srivatsav Sura, Midvale Utah
